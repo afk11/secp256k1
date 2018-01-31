@@ -158,6 +158,7 @@ void test_bulletproof_inner_product(size_t depth, const secp256k1_ge *geng, cons
     secp256k1_ge_set_gej(&offs_ctx.p, &pj);
 
     /* wrong p_offs should fail */
+    offs_ctx.parity = 0;
     CHECK(secp256k1_bulletproof_inner_product_verify_impl(&ctx->ecmult_ctx, scratch, geng, genh, 1 << depth, &innp_ctx, 1) == 0);
 
     secp256k1_scalar_negate(&innp_ctx.p_offs, &innp_ctx.p_offs);

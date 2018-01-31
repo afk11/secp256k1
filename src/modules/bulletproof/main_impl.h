@@ -20,21 +20,25 @@
 #include "modules/bulletproof/util.h"
 
 int secp256k1_bulletproof_rangeproof_verify(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, const unsigned char *proof, size_t plen,
- const secp256k1_pedersen_commitment* commit, size_t nbits, const secp256k1_generator* gen, const unsigned char *extra_commit, size_t extra_commit_len) {
+ const secp256k1_pedersen_commitment* commit, size_t n_commits, size_t nbits, const secp256k1_generator* gen, const unsigned char *extra_commit, size_t extra_commit_len) {
+    size_t i;
     secp256k1_ge genp;
-    secp256k1_ge commitp;
+    secp256k1_ge commitp[100];
 
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(scratch != NULL);
     ARG_CHECK(commit != NULL);
     ARG_CHECK(gen != NULL);
+    ARG_CHECK(n_commits <= sizeof(commitp) / sizeof(commitp[0]));
     ARG_CHECK(extra_commit != NULL || extra_commit_len == 0);
     ARG_CHECK(secp256k1_ecmult_context_is_built(&ctx->ecmult_ctx));
 
     secp256k1_generator_load(&genp, gen);
-    secp256k1_pedersen_commitment_load(&commitp, commit);
+    for (i = 0; i < n_commits; i++) {
+        secp256k1_pedersen_commitment_load(&commitp[i], &commit[i]);
+    }
 
-    return secp256k1_bulletproof_rangeproof_verify_impl(&ctx->ecmult_ctx, scratch, &proof, &plen, 1, nbits, &commitp, 1, &genp, &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[64], extra_commit, extra_commit_len);
+    return secp256k1_bulletproof_rangeproof_verify_impl(&ctx->ecmult_ctx, scratch, &proof, &plen, 1, nbits, commitp, n_commits, &genp, &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[64], extra_commit, extra_commit_len);
 }
 
 int secp256k1_bulletproof_rangeproof_verify_multi(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, const unsigned char *proof, size_t plen, const secp256k1_pedersen_commitment* commit, size_t nbits, const secp256k1_generator* gen, const unsigned char *extra_commit, size_t extra_commit_len) {
@@ -61,13 +65,12 @@ for (i = 0; i < sizeof(plens) / sizeof(plens[0]); i++) {
     return secp256k1_bulletproof_rangeproof_verify_impl(&ctx->ecmult_ctx, scratch, proof_ptr, plens, 1, nbits, commitp, 1, genp, &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[64], extra_commit, extra_commit_len);
 }
 
-int secp256k1_bulletproof_rangeproof_prove(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, unsigned char *proof, size_t *plen, uint64_t value, const unsigned char *blind,
+int secp256k1_bulletproof_rangeproof_prove(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, unsigned char *proof, size_t *plen, uint64_t *value, const unsigned char **blind, size_t n_commits,
  const secp256k1_generator* gen, size_t nbits, const unsigned char *nonce, const unsigned char *extra_commit, size_t extra_commit_len) {
-    secp256k1_ge commitp;
-    secp256k1_gej commitj;
+    secp256k1_ge commitp[100]; /* TODO choose a sane limit */
+    secp256k1_scalar blinds[100];
     secp256k1_ge genp;
-    secp256k1_scalar blinds;
-    int overflow;
+    size_t i;
 
     VERIFY_CHECK(ctx != NULL);
     ARG_CHECK(scratch != NULL);
@@ -76,23 +79,33 @@ int secp256k1_bulletproof_rangeproof_prove(const secp256k1_context* ctx, secp256
     ARG_CHECK(blind != NULL);
     ARG_CHECK(gen != NULL);
     ARG_CHECK(nonce != NULL);
+    ARG_CHECK(n_commits <= sizeof(commitp) / sizeof(commitp[0]));
     ARG_CHECK(nbits <= 64);
-    ARG_CHECK(nbits == 64 || value < (1ull << nbits));
+    if (nbits < 64) {
+        for (i = 0; i < n_commits; i++) {
+            ARG_CHECK(value[i] < (1ull << nbits));
+            ARG_CHECK(blind[i] != NULL);
+        }
+    }
     ARG_CHECK(extra_commit != NULL || extra_commit_len == 0);
     ARG_CHECK(secp256k1_ecmult_context_is_built(&ctx->ecmult_ctx));
     ARG_CHECK(secp256k1_ecmult_gen_context_is_built(&ctx->ecmult_gen_ctx));
 
     secp256k1_generator_load(&genp, gen);
 
-    secp256k1_scalar_set_b32(&blinds, blind, &overflow);
-    if (overflow || secp256k1_scalar_is_zero(&blinds)) {
-        return 0;
+    for (i = 0; i < n_commits; i++) {
+        int overflow;
+        secp256k1_gej commitj;
+        secp256k1_scalar_set_b32(&blinds[i], blind[i], &overflow);
+        if (overflow || secp256k1_scalar_is_zero(&blinds[i])) {
+            return 0;
+        }
+        secp256k1_pedersen_ecmult(&ctx->ecmult_gen_ctx, &commitj, &blinds[i], value[i], &genp);
+        secp256k1_ge_set_gej(&commitp[i], &commitj);
     }
-    secp256k1_pedersen_ecmult(&ctx->ecmult_gen_ctx, &commitj, &blinds, value, &genp);
-    secp256k1_ge_set_gej(&commitp, &commitj);
 
     return secp256k1_bulletproof_rangeproof_prove_impl(&ctx->ecmult_gen_ctx, &ctx->ecmult_ctx, scratch,
-        proof, plen, nbits, &value, &blinds, &commitp, 1, &genp, &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[64], nonce, extra_commit, extra_commit_len);
+        proof, plen, nbits, value, blinds, commitp, n_commits, &genp, &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[64], nonce, extra_commit, extra_commit_len);
 }
 
 #endif
