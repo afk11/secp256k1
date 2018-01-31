@@ -8,6 +8,7 @@
 #define SECP256K1_MODULE_BULLETPROOF_MAIN_IMPL
 
 #include "group.h"
+#include "scalar.h"
 
 #include "modules/rangeproof/main_impl.h"
 #include "modules/rangeproof/pedersen_impl.h"
@@ -111,6 +112,86 @@ int secp256k1_bulletproof_rangeproof_prove(const secp256k1_context* ctx, secp256
 
     return secp256k1_bulletproof_rangeproof_prove_impl(&ctx->ecmult_gen_ctx, &ctx->ecmult_ctx, scratch,
         proof, plen, nbits, value, blinds, commitp, n_commits, &genp, &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[64], nonce, extra_commit, extra_commit_len);
+}
+
+secp256k1_bulletproof_circuit *secp256k1_circuit_parse(const secp256k1_context *ctx, const char *description) {
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(description != NULL);
+    return secp256k1_parse_circuit(ctx, description);
+}
+
+void secp256k1_circuit_destroy(const secp256k1_context *ctx, secp256k1_bulletproof_circuit *circ) {
+    VERIFY_CHECK(ctx != NULL);
+    secp256k1_circuit_destroy_impl(circ);
+}
+
+int secp256k1_bulletproof_circuit_prove(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, unsigned char *proof, size_t *plen, secp256k1_bulletproof_circuit *circ, unsigned char *nonce) {
+#include "jubjub.assn"
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(scratch != NULL);
+    ARG_CHECK(proof != NULL);
+    ARG_CHECK(plen != NULL);
+    ARG_CHECK(circ != NULL);
+    ARG_CHECK(nonce != NULL);
+
+    return secp256k1_bulletproof_relation66_prove_impl(
+        &ctx->ecmult_ctx,
+        scratch,
+        proof, plen,
+        jubjub_al, jubjub_ar, jubjub_ao, 2048,
+        NULL, NULL, 0,
+        &secp256k1_ge_const_g2,
+        circ,
+        &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[32768],
+        nonce,
+        NULL, 0
+    );
+}
+
+int secp256k1_bulletproof_circuit_verify(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, const unsigned char *proof, size_t plen, secp256k1_bulletproof_circuit *circ) {
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(scratch != NULL);
+    ARG_CHECK(proof != NULL);
+    ARG_CHECK(circ != NULL);
+
+    return secp256k1_bulletproof_relation66_verify_impl(
+        &ctx->ecmult_ctx,
+        scratch,
+        &proof, &plen, 1,
+        NULL, 0,
+        &secp256k1_ge_const_g2,
+        &circ,
+        &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[32768],
+        NULL, 0
+    );
+}
+
+int secp256k1_bulletproof_circuit_verify_multi(const secp256k1_context* ctx, secp256k1_scratch_space *scratch, const unsigned char *proof, size_t plen, size_t n_proofs, secp256k1_bulletproof_circuit **circ) {
+    const unsigned char *proof_ptr[MAX_BATCH_QTY];
+    size_t plens[MAX_BATCH_QTY];
+    size_t i;
+
+    VERIFY_CHECK(ctx != NULL);
+    ARG_CHECK(scratch != NULL);
+    ARG_CHECK(proof != NULL);
+    ARG_CHECK(circ != NULL);
+
+    for (i = 0; i < n_proofs; i++) {
+        proof_ptr[i] = proof;
+        plens[i] = plen;
+    }
+
+    return secp256k1_bulletproof_relation66_verify_impl(
+        &ctx->ecmult_ctx,
+        scratch,
+        proof_ptr, plens, n_proofs,
+        NULL, 0,
+        &secp256k1_ge_const_g2,
+        circ,
+        &secp256k1_ge_const_gi[0], &secp256k1_ge_const_gi[32768],
+        NULL, 0
+    );
 }
 
 #endif

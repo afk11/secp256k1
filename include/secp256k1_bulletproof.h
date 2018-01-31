@@ -9,6 +9,8 @@
 extern "C" {
 # endif
 
+#define MAX_BATCH_QTY	100
+
 /* Maximum depth of 31 lets us validate an aggregate of 2^25 64-bit proofs */
 #define SECP256K1_BULLETPROOF_MAX_DEPTH 31
 
@@ -35,12 +37,14 @@ SECP256K1_API int secp256k1_bulletproof_rangeproof_verify_multi(
     secp256k1_scratch_space* scratch,
     const unsigned char* proof,
     size_t plen,
+    size_t n_proofs,
     const secp256k1_pedersen_commitment* commit,
+    size_t n_commits,
     size_t nbits,
     const secp256k1_generator* gen,
     const unsigned char* extra_commit,
     size_t extra_commit_len
-) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(7);
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(6) SECP256K1_ARG_NONNULL(9);
 
 
 SECP256K1_API int secp256k1_bulletproof_rangeproof_prove(
@@ -57,6 +61,44 @@ SECP256K1_API int secp256k1_bulletproof_rangeproof_prove(
     const unsigned char* extra_commit,
     size_t extra_commit_len
 ) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(6) SECP256K1_ARG_NONNULL(8) SECP256K1_ARG_NONNULL(10);
+
+/* circuit stuff */
+SECP256K1_API secp256k1_bulletproof_circuit *secp256k1_circuit_parse(
+    const secp256k1_context *ctx,
+    const char *description
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2);
+
+SECP256K1_API void secp256k1_circuit_destroy(
+    const secp256k1_context *ctx,
+    secp256k1_bulletproof_circuit *circ
+) SECP256K1_ARG_NONNULL(1);
+
+SECP256K1_API int secp256k1_bulletproof_circuit_prove(
+    const secp256k1_context* ctx,
+    secp256k1_scratch_space *scratch,
+    unsigned char *proof,
+    size_t *plen,
+    secp256k1_bulletproof_circuit *circ,
+    unsigned char *nonce
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(4) SECP256K1_ARG_NONNULL(5) SECP256K1_ARG_NONNULL(6);
+
+SECP256K1_API int secp256k1_bulletproof_circuit_verify(
+    const secp256k1_context* ctx,
+    secp256k1_scratch_space *scratch,
+    const unsigned char *proof,
+    size_t plen,
+    secp256k1_bulletproof_circuit *circ
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(5);
+
+SECP256K1_API int secp256k1_bulletproof_circuit_verify_multi(
+    const secp256k1_context* ctx,
+    secp256k1_scratch_space *scratch,
+    const unsigned char *proof,
+    size_t plen,
+    size_t n_proofs,
+    secp256k1_bulletproof_circuit **circ
+) SECP256K1_ARG_NONNULL(1) SECP256K1_ARG_NONNULL(2) SECP256K1_ARG_NONNULL(3) SECP256K1_ARG_NONNULL(6);
+
 
 # ifdef __cplusplus
 }

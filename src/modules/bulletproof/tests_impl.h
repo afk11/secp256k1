@@ -295,7 +295,6 @@ void test_bulletproof_rangeproof_aggregate(size_t nbits, size_t n_commits, size_
     }
 
     CHECK(secp256k1_bulletproof_rangeproof_prove_impl(&ctx->ecmult_gen_ctx, &ctx->ecmult_ctx, scratch, proof, &plen, nbits, v, blind, commitp, n_commits, &genp, geng, genh, nonce, NULL, 0) == 1);
-printf("plen %d\n", (int)plen);
     CHECK(plen == expected_size);
     CHECK(secp256k1_bulletproof_rangeproof_verify_impl(&ctx->ecmult_ctx, scratch, &proof_ptr, &plen, 1, nbits, &constptr, n_commits, &genp, geng, genh, NULL, 0) == 1);
 
@@ -308,6 +307,7 @@ printf("plen %d\n", (int)plen);
 void test_bulletproof_circuit(const secp256k1_ge *geng, const secp256k1_ge *genh) {
     unsigned char proof[2000];
     const unsigned char nonce[32] = "ive got a bit won't tell u which";
+    const unsigned char *proof_ptr = proof;
     size_t plen = sizeof(proof);
     secp256k1_scalar one;
     secp256k1_scalar al[2];
@@ -324,7 +324,6 @@ void test_bulletproof_circuit(const secp256k1_ge *geng, const secp256k1_ge *genh
 secp256k1_scalar challenge;
 secp256k1_scalar answer;
 
-printf("circ: %p\n", (void *) jubjub);
     CHECK (simple != NULL);
 secp256k1_scalar_set_int(&challenge, 17);
 secp256k1_scalar_inverse(&answer, &challenge);
@@ -357,10 +356,10 @@ secp256k1_scalar_inverse(&answer, &challenge);
     CHECK(secp256k1_bulletproof_relation66_verify_impl(
         &ctx->ecmult_ctx,
         scratch,
-        proof, plen,
+        &proof_ptr, &plen, 1,
         NULL, 0,
         &secp256k1_ge_const_g2,
-        simple,
+        &simple,
         geng, genh,
         NULL, 0
     ));
@@ -382,16 +381,16 @@ secp256k1_scalar_inverse(&answer, &challenge);
     CHECK(secp256k1_bulletproof_relation66_verify_impl(
         &ctx->ecmult_ctx,
         scratch,
-        proof, plen,
+        &proof_ptr, &plen, 1,
         NULL, 0,
         &secp256k1_ge_const_g2,
-        jubjub,
+        &jubjub,
         geng, genh,
         NULL, 0
     ));
 
-    secp256k1_circuit_destroy(simple);
-    secp256k1_circuit_destroy(jubjub);
+    secp256k1_circuit_destroy(ctx, simple);
+    secp256k1_circuit_destroy(ctx, jubjub);
     secp256k1_scratch_destroy(scratch);
 }
 
