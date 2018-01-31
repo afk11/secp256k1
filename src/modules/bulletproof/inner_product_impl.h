@@ -46,8 +46,8 @@ typedef struct {
     const secp256k1_ge *genh;
     size_t n_gen_pairs;
     size_t ceil_lg_gens;
-    secp256k1_scalar randomizer[10];
-    secp256k1_bulletproof_innerproduct_vfy_data proof[10];
+    secp256k1_scalar randomizer[MAX_BATCH_QTY];
+    secp256k1_bulletproof_innerproduct_vfy_data proof[MAX_BATCH_QTY];
 } secp256k1_bulletproof_innerproduct_vfy_ecmult_context;
 
 /* Bulletproof rangeproof verification comes down to a single multiexponentiation of the form
