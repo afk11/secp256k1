@@ -12,7 +12,7 @@ extern "C" {
 #define MAX_BATCH_QTY	100
 
 /* Maximum depth of 31 lets us validate an aggregate of 2^25 64-bit proofs */
-#define SECP256K1_BULLETPROOF_MAX_DEPTH 31
+#define SECP256K1_BULLETPROOF_MAX_DEPTH 60
 
 /* Size of a hypothetical 31-depth rangeproof, in bytes */
 #define SECP256K1_BULLETPROOF_MAX_PROOF (160 + 66*32 + 7)

@@ -84,7 +84,6 @@ static secp256k1_bulletproof_circuit *secp256k1_parse_circuit(const secp256k1_co
     secp256k1_bulletproof_circuit *ret = (secp256k1_bulletproof_circuit*)checked_malloc(&ctx->error_callback, sizeof(*ret));
 
     if (sscanf(c, "%d,%d,%d; %n", &n_gates, &n_commits, &n_constraints, &chars_read) != 3) {
-puts("FAIL 2");
         free (ret);
         return NULL;
     }
@@ -133,21 +132,17 @@ puts("FAIL 2");
                 w = ret->wv;
                 break;
             default:
-puts("FAIL 1");
                 secp256k1_circuit_destroy(ctx, ret);
                 return NULL;
             }
             c++;
             if (sscanf(c, "%d %n", &index, &chars_read) != 1) {
                 secp256k1_circuit_destroy(ctx, ret);
-puts("FAIL 4");
         free (ret);
                 return NULL;
             }
             if ((w != ret->wv && index >= n_gates) || (w == ret->wv && index >= n_commits)) {
-printf("index %d, vs ngates %d and ncommits %d (wv %d)\n", (int) index, (int) n_gates, (int) n_commits, w != ret->wv);
                 secp256k1_circuit_destroy(ctx, ret);
-puts("FAIL 5");
                 return NULL;
             }
             row = &w[index];
@@ -176,13 +171,11 @@ puts("FAIL 5");
             secp256k1_parse_scalar(&ret->c[i], c, &c);
             if (*c != ';') {
                 secp256k1_circuit_destroy(ctx, ret);
-puts("FAIL 6");
                 return NULL;
             }
             c++;
         } else {
             secp256k1_circuit_destroy(ctx, ret);
-puts("FAIL 7");
             return NULL;
         }
     }

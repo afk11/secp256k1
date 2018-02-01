@@ -162,12 +162,12 @@ static void run_test(bench_bulletproof_t *data, size_t nbits, size_t n_commits) 
 
 int main(void) {
     bench_bulletproof_t data;
-#include "src/modules/bulletproof/jubjub.circuit"
+#include "src/modules/bulletproof/circuits/SHA2.circuit"
 
     data.ctx = secp256k1_context_create(SECP256K1_CONTEXT_SIGN | SECP256K1_CONTEXT_VERIFY);
-    data.scratch = secp256k1_scratch_space_create(data.ctx, 10000000, 10000000);  /* 10M should be waay overkill */
-    data.circ = secp256k1_circuit_parse(data.ctx, jubjub_circ);
-    data.circ2 = secp256k1_circuit_parse(data.ctx, jubjub_circ);
+    data.scratch = secp256k1_scratch_space_create(data.ctx, 10000000, 250000000);  /* 10M should be waay overkill */
+    data.circ = secp256k1_circuit_parse(data.ctx, incl_circ);
+    data.circ2 = secp256k1_circuit_parse(data.ctx, incl_circ);
 
     run_benchmark("bulletproof_jubjub_prove", bench_bulletproof_jubjub_prove, bench_bulletproof_circuit_setup, bench_bulletproof_teardown, (void *)&data, 1, 5);
     run_benchmark("bulletproof_jubjub_verify", bench_bulletproof_jubjub_verify, bench_bulletproof_circuit_setup, bench_bulletproof_teardown, (void *)&data, 10, 10);

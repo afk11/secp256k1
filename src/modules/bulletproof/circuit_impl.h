@@ -428,7 +428,9 @@ static int secp256k1_bulletproof_relation66_prove_impl(const secp256k1_ecmult_co
     abgh_data.geng = geng;
     abgh_data.genh = genh;
     secp256k1_bulletproof_circuit_lr_generator_init(&abgh_data.lr_gen, &rng, &y, &z, al, ar, ao, circ);
-    secp256k1_bulletproof_inner_product_prove_impl(ecmult_ctx, scratch, &a, &b, &out_pt[8], &out_pt[8 + depth], 1 << depth, secp256k1_bulletproof_circuit_abgh_callback, (void *) &abgh_data, commit);
+    if (secp256k1_bulletproof_inner_product_prove_impl(ecmult_ctx, scratch, &a, &b, &out_pt[8], &out_pt[8 + depth], 1ull << depth, secp256k1_bulletproof_circuit_abgh_callback, (void *) &abgh_data, commit) == 0) {
+        return 0;
+    }
     secp256k1_bulletproof_circuit_lr_generator_finalize(&abgh_data.lr_gen);
 
     /* Encode everything */
@@ -685,7 +687,6 @@ static int secp256k1_bulletproof_relation66_verify_impl(const secp256k1_ecmult_c
         innp_ctx[i].rangeproof_cb_data = (void *) &ecmult_data[i];
         innp_ctx[i].n_extra_rangeproof_points = 9 + nc;
     }
-
     return secp256k1_bulletproof_inner_product_verify_impl(ecmult_ctx, scratch, geng, genh, circ[0]->n_gates, innp_ctx, n_proofs);
 }
 

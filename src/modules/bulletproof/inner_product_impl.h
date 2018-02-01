@@ -372,7 +372,7 @@ static int secp256k1_bulletproof_innerproduct_pf_ecmult_callback(secp256k1_scala
  */
 static int secp256k1_bulletproof_inner_product_prove_impl(const secp256k1_ecmult_context *ecmult_ctx, secp256k1_scratch *scratch, secp256k1_scalar *final_a, secp256k1_scalar *final_b, secp256k1_ge *lpt_arr, secp256k1_ge *rpt_arr, const size_t n, secp256k1_ecmult_multi_callback *cb, void *cb_data, const unsigned char *commit_inp) {
     const size_t depth = secp256k1_ceil_lg(n);
-    const size_t next_pow2 = 1 << depth;
+    const size_t next_pow2 = 1ull << depth;
     secp256k1_scalar zero;
     size_t i;
     unsigned char commit[32];
@@ -407,8 +407,12 @@ static int secp256k1_bulletproof_inner_product_prove_impl(const secp256k1_ecmult
     b_arr = (secp256k1_scalar*)secp256k1_scratch_alloc(scratch, next_pow2 * sizeof(secp256k1_scalar));
     geng = (secp256k1_gej*)secp256k1_scratch_alloc(scratch, next_pow2 * sizeof(secp256k1_gej));
     genh = (secp256k1_gej*)secp256k1_scratch_alloc(scratch, next_pow2 * sizeof(secp256k1_gej));
+    VERIFY_CHECK(a_arr != NULL);
+    VERIFY_CHECK(b_arr != NULL);
+    VERIFY_CHECK(geng != NULL);
+    VERIFY_CHECK(genh != NULL);
 
-    myscr = secp256k1_scratch_create(NULL, 10000000, 10000000);  /* 10M should be waay overkill */
+    myscr = secp256k1_scratch_create(NULL, 100000000, 100000000);  /* 100M should be waay overkill */
 
     memcpy(commit, commit_inp, 32);
     for (i = 0; i < n; i++) {
