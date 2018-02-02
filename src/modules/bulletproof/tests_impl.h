@@ -316,12 +316,12 @@ void test_bulletproof_circuit(const secp256k1_ge *geng, const secp256k1_ge *genh
     secp256k1_scalar ar[2];
     secp256k1_scalar ao[2];
     secp256k1_scratch *scratch = secp256k1_scratch_space_create(ctx, 1000000, 100000000);
-#include "circuits/SHA2.circuit"
-#include "circuits/SHA2.assn"
+#include "circuits/jubjub-12.circuit"
+#include "circuits/jubjub-12.assn"
 
     const char inv_17_19_circ[] = "2,0,4; L0 = 17; 2*L1 - L0 = 21; O0 = 1; O1 = 1;";
     secp256k1_bulletproof_circuit *simple = secp256k1_parse_circuit(ctx, inv_17_19_circ);
-    secp256k1_bulletproof_circuit *incl = secp256k1_parse_circuit(ctx, incl_circ);
+    secp256k1_bulletproof_circuit *incl = secp256k1_parse_circuit(ctx, incl_desc);
 
 secp256k1_scalar challenge;
 secp256k1_scalar answer;
@@ -400,7 +400,7 @@ void run_bulletproof_tests(void) {
     size_t i;
 
     /* Make a ton of generators */
-    size_t n_gens = 65536;
+    size_t n_gens = 16384;
     secp256k1_ge *geng = (secp256k1_ge *)checked_malloc(&ctx->error_callback, sizeof(secp256k1_ge) * n_gens);
     secp256k1_ge *genh = (secp256k1_ge *)checked_malloc(&ctx->error_callback, sizeof(secp256k1_ge) * n_gens);
     for (i = 0; i < n_gens; i++) {
